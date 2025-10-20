@@ -1,0 +1,34 @@
+name: Update AD List (Text Only)
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"  # 每天 UTC 0 点运行（北京时间 8:00）
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create rule_provider dir
+        run: mkdir -p rule_provider
+
+      - name: Download OutlineF ad list
+        run: |
+          curl -sS https://ghfast.top/github.com/privacy-protection-tools/OutlineF/raw/refs/heads/master/ads-all.txt > rule_provider/ad_block.list
+
+      - name: Check if file changed
+        run: |
+          git add rule_provider/ad_block.list
+          if git diff --cached --exit-code; then
+            echo "⚠️ 无变化，跳过提交"
+            exit 0
+          fi
+
+      - name: Commit and push
+        run: |
+          git config --global user.email "github-action@users.noreply.github.com"
+          git config --global user.name "GitHub Action"
+          git commit -m "🔄 Update ad_block.list $(date -u)"
+          git push
